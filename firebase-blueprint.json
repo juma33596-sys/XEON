@@ -1,0 +1,455 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with gamertag, avatar, referral code, and role status.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "username": { "type": "string", "maxLength": 64 },
+        "avatarUrl": { "type": "string", "maxLength": 512 },
+        "referralCode": { "type": "string", "maxLength": 32 },
+        "referredBy": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] }
+      },
+      "required": ["userId", "email", "username", "createdAt", "role"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User wallet holding dual balances: Coins and Diamonds.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "coins": { "type": "number" },
+        "diamonds": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "coins", "diamonds", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Digital marketplace product with multi-image gallery, category, price, and currency.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 160 },
+        "slug": { "type": "string", "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 4000 },
+        "category": { "type": "string", "maxLength": 64 },
+        "tags": { "type": "array" },
+        "imageUrls": { "type": "array" },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "status": { "type": "string", "enum": ["published", "unpublished", "archived"] },
+        "deliveryType": { "type": "string", "enum": ["download", "manual"] },
+        "featured": { "type": "boolean" },
+        "version": { "type": "string", "maxLength": 32 },
+        "platform": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "imageUrls", "price", "currency", "status", "deliveryType"]
+    },
+    "ProductSecret": {
+      "title": "ProductSecret",
+      "description": "Protected download links and license keys for purchased items.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "maxLength": 128 },
+        "downloadUrl": { "type": "string", "maxLength": 1024 },
+        "fileSize": { "type": "string", "maxLength": 64 },
+        "instructions": { "type": "string", "maxLength": 2048 },
+        "licenseKeyTemplate": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["productId", "downloadUrl"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase order records with product snapshot, cost, and delivery state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "productId": { "type": "string", "maxLength": 128 },
+        "productTitle": { "type": "string", "maxLength": 160 },
+        "productImage": { "type": "string", "maxLength": 512 },
+        "pricePaid": { "type": "number" },
+        "currency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "deliveryType": { "type": "string", "enum": ["download", "manual"] },
+        "status": { "type": "string", "enum": ["completed", "processing", "refunded"] },
+        "licenseKey": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "productId", "pricePaid", "currency", "status", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Append-only financial ledger record for all wallet credits and debits.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["topup", "exchange_debit", "exchange_credit", "purchase", "referral_reward", "redeem_reward"] },
+        "currency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 256 },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "type", "currency", "amount", "createdAt"]
+    },
+    "Topup": {
+      "title": "Topup",
+      "description": "Card-based mobile money top-up request with payment proof reference.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "packId": { "type": "string", "maxLength": 128 },
+        "rewardCurrency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "rewardAmount": { "type": "number" },
+        "tshPrice": { "type": "number" },
+        "paymentNetwork": { "type": "string", "enum": ["airtel", "vodacom", "mixx", "halopesa"] },
+        "senderPhone": { "type": "string", "maxLength": 32 },
+        "transactionReference": { "type": "string", "maxLength": 128 },
+        "proofUrl": { "type": "string", "maxLength": 1024 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "cancelled"] },
+        "adminNotes": { "type": "string", "maxLength": 512 },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "reviewedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "rewardCurrency", "rewardAmount", "tshPrice", "paymentNetwork", "transactionReference", "status", "createdAt"]
+    },
+    "Pack": {
+      "title": "Pack",
+      "description": "Configurable top-up coin or diamond packages.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 100 },
+        "currency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "amount": { "type": "number" },
+        "tshPrice": { "type": "number" },
+        "popular": { "type": "boolean" },
+        "badge": { "type": "string", "maxLength": 32 },
+        "description": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "title", "currency", "amount", "tshPrice"]
+    },
+    "PaymentMethod": {
+      "title": "PaymentMethod",
+      "description": "Configurable mobile network payment instructions (M-Pesa, Airtel, HaloPesa, Mixx).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 100 },
+        "paybillOrAccount": { "type": "string", "maxLength": 64 },
+        "accountName": { "type": "string", "maxLength": 100 },
+        "instructions": { "type": "string", "maxLength": 2048 },
+        "color": { "type": "string", "maxLength": 32 },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "name", "paybillOrAccount", "accountName", "instructions", "isActive"]
+    },
+    "ExchangeRate": {
+      "title": "ExchangeRate",
+      "description": "Configurable currency conversion rates between Coins and Diamonds.",
+      "type": "object",
+      "properties": {
+        "coinsPerDiamond": { "type": "number" },
+        "feePercentage": { "type": "number" },
+        "minExchangeDiamonds": { "type": "number" },
+        "minExchangeCoins": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["coinsPerDiamond", "feePercentage"]
+    },
+    "RedeemCode": {
+      "title": "RedeemCode",
+      "description": "Promotional reward voucher codes with usage limits.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "maxLength": 64 },
+        "rewardCurrency": { "type": "string", "enum": ["coins", "diamonds"] },
+        "rewardAmount": { "type": "number" },
+        "maxUses": { "type": "number" },
+        "currentUses": { "type": "number" },
+        "expiresAt": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["code", "rewardCurrency", "rewardAmount", "maxUses", "currentUses", "isActive"]
+    },
+    "CasinoBet": {
+      "title": "CasinoBet",
+      "description": "Provably fair casino game bet and payout record using Coins.",
+      "type": "object",
+      "properties": {
+        "betId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "gameId": { "type": "string", "enum": ["aviator", "heads_tails", "color_game", "grid_7x7", "dice"] },
+        "betAmount": { "type": "number" },
+        "multiplier": { "type": "number" },
+        "payout": { "type": "number" },
+        "outcome": { "type": "string", "enum": ["won", "lost"] },
+        "serverSeedHash": { "type": "string", "maxLength": 256 },
+        "clientSeed": { "type": "string", "maxLength": 128 },
+        "nonce": { "type": "number" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["betId", "userId", "gameId", "betAmount", "outcome", "timestamp"]
+    },
+    "AuthorizedAdminEmail": {
+      "title": "AuthorizedAdminEmail",
+      "description": "Pre-authorized admin email clearances granted by primary super admin.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 256 },
+        "grantedBy": { "type": "string", "maxLength": 256 },
+        "grantedAt": { "type": "string" }
+      },
+      "required": ["email", "grantedAt"]
+    },
+    "SiteEvent": {
+      "title": "SiteEvent",
+      "description": "Featured announcements, weekend sales, and tournament events.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 160 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "bannerUrl": { "type": "string", "maxLength": 512 },
+        "actionUrl": { "type": "string", "maxLength": 256 },
+        "badge": { "type": "string", "maxLength": 64 },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "title", "description", "isActive"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Admin activity tracking log for audits and security verification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "adminId": { "type": "string", "maxLength": 128 },
+        "adminEmail": { "type": "string", "maxLength": 256 },
+        "action": { "type": "string", "maxLength": 128 },
+        "target": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "adminId", "action", "createdAt"]
+    },
+    "XoraChat": {
+      "title": "XoraChat",
+      "description": "User persistent chat session record with Xora AI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "archived": { "type": "boolean" },
+        "messageCount": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "createdAt", "updatedAt"]
+    },
+    "XoraMessage": {
+      "title": "XoraMessage",
+      "description": "Individual message in a Xora AI chat thread.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "chatId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["user", "assistant", "system"] },
+        "content": { "type": "string", "maxLength": 8000 },
+        "status": { "type": "string", "enum": ["sent", "streaming", "complete", "error"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "chatId", "userId", "role", "content", "createdAt"]
+    },
+    "XoraMemory": {
+      "title": "XoraMemory",
+      "description": "Persistent preference or fact remembered by Xora AI with user consent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "text": { "type": "string", "maxLength": 500 },
+        "category": { "type": "string", "enum": ["preference", "language", "goal", "fact"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "text", "category", "createdAt"]
+    },
+    "XoraSettings": {
+      "title": "XoraSettings",
+      "description": "User-level preferences and memory toggles for Xora AI.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "memoryEnabled": { "type": "boolean" },
+        "preferredLanguage": { "type": "string", "enum": ["en", "sw"] },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "memoryEnabled", "updatedAt"]
+    },
+    "HostingProject": {
+      "title": "HostingProject",
+      "description": "Hosted web project with static files, build logs, and live slug.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "slug": { "type": "string", "maxLength": 64 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "projectType": { "type": "string", "enum": ["static", "backend"] },
+        "sourceMode": { "type": "string", "enum": ["paste", "zip", "github"] },
+        "framework": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["draft", "queued", "building", "live", "failed", "rejected", "suspended"] },
+        "liveUrl": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "name", "slug", "projectType", "sourceMode", "status", "createdAt"]
+    },
+    "HostingBackendRequest": {
+      "title": "HostingBackendRequest",
+      "description": "Managed backend deployment request with atomic wallet coin hold.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "projectName": { "type": "string", "maxLength": 128 },
+        "backendStack": { "type": "string", "maxLength": 128 },
+        "heldCoins": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending_review", "approved", "rejected", "changes_requested"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "projectId", "userId", "projectName", "backendStack", "heldCoins", "status", "createdAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Timed sliding announcements with auto-disappear expiry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 160 },
+        "message": { "type": "string", "maxLength": 500 },
+        "badge": { "type": "string", "maxLength": 32 },
+        "badgeColor": { "type": "string", "maxLength": 64 },
+        "actionLabel": { "type": "string", "maxLength": 32 },
+        "actionTab": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" },
+        "expiresAt": { "type": "string" },
+        "durationSeconds": { "type": "number" },
+        "entityType": { "type": "string", "maxLength": 32 }
+      },
+      "required": ["id", "title", "message", "createdAt", "expiresAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": "User",
+      "description": "Collection of authorized admin users."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records."
+    },
+    "/users/{userId}/xoraChats/{chatId}": {
+      "schema": "XoraChat",
+      "description": "User isolated AI chat sessions."
+    },
+    "/users/{userId}/xoraChats/{chatId}/messages/{messageId}": {
+      "schema": "XoraMessage",
+      "description": "Chat thread messages."
+    },
+    "/users/{userId}/xoraMemories/{memoryId}": {
+      "schema": "XoraMemory",
+      "description": "User controlled persistent memories."
+    },
+    "/users/{userId}/xoraSettings/{settingId}": {
+      "schema": "XoraSettings",
+      "description": "User configuration for Xora AI."
+    },
+    "/wallets/{userId}": {
+      "schema": "Wallet",
+      "description": "Secure dual balance wallets."
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Digital marketplace items."
+    },
+    "/productSecrets/{productId}": {
+      "schema": "ProductSecret",
+      "description": "Protected download links and file credentials."
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "User item purchase records."
+    },
+    "/transactions/{txId}": {
+      "schema": "Transaction",
+      "description": "Financial ledger transactions."
+    },
+    "/topups/{topupId}": {
+      "schema": "Topup",
+      "description": "Payment submissions and verification requests."
+    },
+    "/packs/{packId}": {
+      "schema": "Pack",
+      "description": "Coin and Diamond purchase packs."
+    },
+    "/paymentMethods/{methodId}": {
+      "schema": "PaymentMethod",
+      "description": "Configurable mobile network payment instructions."
+    },
+    "/exchangeRates/{rateId}": {
+      "schema": "ExchangeRate",
+      "description": "System exchange rate and fees."
+    },
+    "/redeemCodes/{codeId}": {
+      "schema": "RedeemCode",
+      "description": "Reward voucher codes."
+    },
+    "/redemptions/{redemptionId}": {
+      "schema": "Transaction",
+      "description": "User voucher redemption history."
+    },
+    "/casino_bets/{betId}": {
+      "schema": "CasinoBet",
+      "description": "User provably fair casino wagering records."
+    },
+    "/authorized_admin_emails/{email}": {
+      "schema": "AuthorizedAdminEmail",
+      "description": "List of authorized administrator emails who receive full privileges upon sign-in."
+    },
+    "/events/{eventId}": {
+      "schema": "SiteEvent",
+      "description": "Marketplace announcements and banners."
+    },
+    "/hosting_projects/{projectId}": {
+      "schema": "HostingProject",
+      "description": "Deployed static websites and project configurations."
+    },
+    "/hosting_requests/{requestId}": {
+      "schema": "HostingBackendRequest",
+      "description": "Team-managed backend hosting requests with atomic coin holds."
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Admin actions audit trail."
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Dynamic slide announcements with auto-expire timers."
+    }
+  }
+}

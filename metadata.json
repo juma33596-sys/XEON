@@ -1,0 +1,8 @@
+{
+  "name": " Nexora - Premium Digital Marketplace",
+  "description": "Premium Flutter-inspired digital gaming marketplace with coin and diamond wallets, instant top-ups, atomic currency exchange, and verified digital downloads.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

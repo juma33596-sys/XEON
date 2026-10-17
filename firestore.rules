@@ -1,0 +1,246 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        (request.auth.token.email != null && (request.auth.token.email.lower() == 'edinareginald58@gmail.com' || request.auth.token.email.lower() == 'edinareginald81@gmail.com')) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/authorized_admin_emails/$(request.auth.token.email.lower())))
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      allow read: if isAdmin() || isOwner(adminId);
+      allow write: if isAdmin();
+    }
+
+    // Pre-authorized admin emails
+    match /authorized_admin_emails/{email} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && incoming().userId == userId && (incoming().role == 'user' || (isAdmin() && incoming().role == 'admin'));
+      allow update: if (isOwner(userId) && (!('role' in incoming()) || incoming().role == existing().role)) || isAdmin();
+      allow delete: if isAdmin();
+
+      // Xora AI Conversations & Messages (strictly user-isolated)
+      match /xoraChats/{chatId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+
+        match /messages/{messageId} {
+          allow read, write: if isOwner(userId) || isAdmin();
+        }
+      }
+
+      // Xora AI Persistent Memories & Personalization
+      match /xoraMemories/{memoryId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      // Xora AI User Settings (e.g. memory toggle)
+      match /xoraSettings/{settingId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Registration welcome bonuses lock
+    match /registration_bonuses/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Wallets collection
+    match /wallets/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId) && incoming().userId == userId && incoming().coins >= 0 && incoming().diamonds >= 0) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Products catalog
+    match /products/{productId} {
+      allow get: if (resource.data.status == 'published') || isAdmin();
+      allow list: if (resource.data.status == 'published') || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Categories catalog
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Protected downloads & keys
+    match /productSecrets/{productId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Purchase orders
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Transaction ledger
+    // Transaction ledger
+    match /transactions/{txId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Top-ups
+    match /topups/{topupId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && incoming().status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Top-up Packs configuration
+    match /packs/{packId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Payment methods (M-Pesa, Airtel, HaloPesa, Mixx)
+    match /paymentMethods/{methodId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Exchange rates
+    match /exchangeRates/{rateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Voucher redeem codes
+    match /redeemCodes/{codeId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['currentUses']));
+    }
+
+    // Redemptions
+    match /redemptions/{redemptionId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Casino Bets
+    match /casino_bets/{betId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, update: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // Site Events & Banners
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Site settings
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // NEXORA Hosting Projects (Static & Backend)
+    match /hosting_projects/{projectId} {
+      allow get: if (resource.data.status in ['live', 'stopped']) || (isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()));
+      allow list: if (resource.data.status in ['live', 'stopped']) || (isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()));
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      match /files/{fileId} {
+        allow read: if true;
+        allow write: if isSignedIn() && (get(/databases/$(database)/documents/hosting_projects/$(projectId)).data.userId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // Dynamic Sliding Announcements
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // NEXORA Backend Hosting Requests
+    match /hosting_requests/{requestId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // NEXORA VIP Betting Codes & Odds Marketplace
+    match /betting_codes/{codeId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User Purchased Betting Codes
+    match /purchased_betting_codes/{purchaseId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Audit logs
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+  }
+}
